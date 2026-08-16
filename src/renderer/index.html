@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+  <title>TDQ Video Sync</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <img class="mark" src="../assets/tdq-video-sync-icon.png" alt="TDQ Video Sync">
+      <div>
+        <h1>TDQ Video Sync</h1>
+        <p>Chọn một nguồn thời lượng, ghép media theo số và xuất video MP4.</p>
+      </div>
+    </header>
+
+    <section class="card folders">
+      <div class="section-title"><span>1</span><h2>Chọn dữ liệu</h2></div>
+      <div class="source-mode-field">
+        <label>Nguồn điều khiển thời lượng</label>
+        <div class="segmented source-segmented">
+          <label><input type="radio" name="timingMode" value="audio" checked><span>♪ Âm thanh + Video/Ảnh</span></label>
+          <label><input type="radio" name="timingMode" value="srt"><span>CC SRT + Video/Ảnh</span></label>
+        </div>
+      </div>
+      <div id="audioFolderRow" class="folder-row">
+        <div class="folder-icon audio">♪</div>
+        <div class="folder-info"><label>Nguồn 1 — Thư mục âm thanh</label><div id="audioPath" class="path">Chưa chọn thư mục</div></div>
+        <button class="secondary" data-pick="audio">Chọn thư mục</button>
+      </div>
+      <div id="subtitleFolderRow" class="folder-row hidden">
+        <div class="folder-icon subtitle">CC</div>
+        <div class="folder-info"><label>Nguồn 1 — Timeline SRT</label><div id="subtitlePath" class="path">Chưa chọn file hoặc thư mục SRT</div></div>
+        <div class="folder-actions">
+          <button class="secondary" id="pickSrtFileButton">Chọn file SRT</button>
+          <button class="secondary" data-pick="subtitle">Thư mục SRT</button>
+          <button class="icon-button hidden" id="clearSrtButton" title="Bỏ SRT" aria-label="Bỏ SRT">×</button>
+        </div>
+      </div>
+      <div class="folder-row">
+        <div class="folder-icon media">▶</div>
+        <div class="folder-info"><label>Nguồn 2 — Thư mục video / hình ảnh</label><div id="mediaPath" class="path">Chưa chọn thư mục</div></div>
+        <button class="secondary" data-pick="media">Chọn thư mục</button>
+      </div>
+      <div class="folder-row">
+        <div class="folder-icon output">⇩</div>
+        <div class="folder-info"><label>Thư mục kết quả</label><div id="outputPath" class="path">Chưa chọn thư mục</div></div>
+        <button class="secondary" data-pick="output">Chọn thư mục</button>
+      </div>
+      <div class="scan-line">
+        <button id="scanButton" class="ghost">Kiểm tra & ghép cặp</button>
+        <span id="scanSummary">Chế độ hiện tại chỉ cần Âm thanh + Video/Ảnh.</span>
+      </div>
+    </section>
+
+    <section class="card options">
+      <div class="section-title"><span>2</span><h2>Cấu hình kết quả</h2></div>
+      <div class="option-grid">
+        <div class="field mode-field">
+          <label>Kiểu xuất</label>
+          <div class="segmented">
+            <label><input type="radio" name="mode" value="separate" checked><span>Video riêng lẻ</span></label>
+            <label><input type="radio" name="mode" value="concat"><span>Nối thành 1 video</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="resolution">Khung hình</label>
+          <select id="resolution">
+            <option value="1920x1080">Ngang Full HD (1920×1080)</option>
+            <option value="1080x1920">Dọc Full HD (1080×1920)</option>
+            <option value="1280x720">Ngang HD (1280×720)</option>
+            <option value="720x1280">Dọc HD (720×1280)</option>
+          </select>
+        </div>
+        <div class="field quality-field">
+          <label for="quality">Chất lượng</label>
+          <select id="quality">
+            <option value="18">Cao</option>
+            <option value="21" selected>Cân bằng</option>
+            <option value="24">Nhẹ</option>
+          </select>
+        </div>
+        <div class="field encoder-field">
+          <label for="encoderMode">Tăng tốc xử lý</label>
+          <select id="encoderMode">
+            <option value="auto" selected>Auto — tự nhận diện</option>
+            <option value="gpu">GPU — bắt buộc</option>
+            <option value="cpu">CPU — libx264</option>
+          </select>
+          <span id="hardwareStatus" class="field-status">Đang nhận diện phần cứng...</span>
+        </div>
+        <div id="outputNameField" class="field output-name-field hidden">
+          <label for="outputName">Tên video đã nối</label>
+          <input id="outputName" value="video-da-noi" maxlength="120">
+        </div>
+      </div>
+      <p id="syncNote" class="note">Video dài hơn voice sẽ được cắt; video ngắn hơn được đổi tốc độ; ảnh giữ suốt thời lượng voice.</p>
+    </section>
+
+    <section id="pairCard" class="card pairs hidden">
+      <div class="pair-header"><div class="section-title"><span>3</span><h2>Các cặp tìm thấy</h2></div><span id="pairCount" class="badge"></span></div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th id="sourceHeader">Âm thanh</th><th>Video / ảnh</th><th>Timeline</th><th>Loại</th></tr></thead><tbody id="pairRows"></tbody></table>
+      </div>
+      <div id="warningBox" class="warning hidden"></div>
+    </section>
+
+    <section id="progressCard" class="card progress-card hidden">
+      <div class="progress-head"><strong id="progressMessage">Đang chuẩn bị...</strong><span id="progressPercent">0%</span></div>
+      <div class="progress-track"><div id="progressBar"></div></div>
+    </section>
+
+    <div class="actions">
+      <button id="cancelButton" class="danger hidden">Hủy xử lý</button>
+      <button id="openOutputButton" class="ghost hidden">Mở thư mục kết quả</button>
+      <button id="startButton" class="primary">Bắt đầu đồng bộ</button>
+    </div>
+  </main>
+  <div id="toast" class="toast hidden"></div>
+  <script src="renderer.js"></script>
+</body>
+</html>
